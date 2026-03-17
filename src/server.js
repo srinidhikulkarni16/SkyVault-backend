@@ -21,6 +21,7 @@ app.use("/api/folders", require("./routes/folderRoutes"));
 app.use("/api/shares", require("./routes/shareRoutes"));
 app.use("/api/trash", require("./routes/trashRoutes"));
 app.use("/api/stars", require("./routes/starRoutes"));
+app.use("/api/search", require("./routes/searchRoutes")); // Missing search route
 app.use("/api/utility", require("./routes/utilityRoutes"));
 
 // Error Handling

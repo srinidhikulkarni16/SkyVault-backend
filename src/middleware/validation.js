@@ -26,12 +26,12 @@ const loginValidation = [
 
 const createFolderValidation = [
   body('name').trim().notEmpty(),
-  body('parentId').optional({ nullable: true }).isUUID()
+  body('parent_id').optional({ nullable: true }).isUUID()
 ];
 
 const moveValidation = [
   param('id').isUUID(),
-  body('destinationId').optional({ nullable: true }).isUUID()
+  body('folder_id').optional({ nullable: true }).isUUID() // Changed from destinationId to folder_id
 ];
 
 const shareValidation = [
@@ -46,6 +46,14 @@ const starValidation = [
   body('resourceId').isUUID()
 ];
 
+// Public link validation
+const publicLinkValidation = [
+  body('resourceType').isIn(['file', 'folder']),
+  body('resourceId').isUUID(),
+  body('expiresAt').optional({ nullable: true }).isISO8601(),
+  body('password').optional({ nullable: true }).isString()
+];
+
 module.exports = {
   validate,
   registerValidation,
@@ -53,5 +61,6 @@ module.exports = {
   createFolderValidation,
   moveValidation,
   shareValidation,
-  starValidation
+  starValidation,
+  publicLinkValidation
 };

@@ -5,6 +5,7 @@ const { registerValidation, loginValidation, validate } = require("../middleware
 
 router.post("/register", registerValidation, validate, authController.register);
 router.post("/login", loginValidation, validate, authController.login);
+router.post("/google", authController.googleLogin); // Google OAuth route
 router.get("/me", auth, authController.getProfile);
 
 module.exports = router;
