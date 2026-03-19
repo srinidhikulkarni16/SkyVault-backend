@@ -1,125 +1,124 @@
 const supabase = require("../config/supabaseClient");
 const { v4: uuidv4 } = require("uuid");
+const bcrypt = require("bcrypt");
 
+const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "drive";
+
+/* ── SHARE WITH USER ─────────────────────────────────────────────────────────*/
+// Frontend sends: { resource_type, resource_id, user_email, role }
 exports.shareWithUser = async (req, res) => {
   try {
-    const { resourceType, resourceId, granteeUserId, role } = req.body;
     const userId = req.user.id;
+    // Support both snake_case (frontend) and camelCase (old code)
+    const resourceType  = req.body.resource_type  || req.body.resourceType;
+    const resourceId    = req.body.resource_id    || req.body.resourceId;
+    const userEmail     = req.body.user_email     || req.body.userEmail;
+    const granteeUserId = req.body.grantee_user_id || req.body.granteeUserId;
+    const role          = req.body.role || "viewer";
 
-    // Verify ownership before allowing share
-    const table = resourceType === 'file' ? 'files' : 'folders';
-    const { data: resource, error: resourceError } = await supabase
+    if (!resourceType || !resourceId || (!userEmail && !granteeUserId)) {
+      return res.status(400).json({ message: "resource_type, resource_id, and user_email are required" });
+    }
+
+    // Verify ownership
+    const table = resourceType === "file" ? "files" : "folders";
+    const { data: resource } = await supabase
       .from(table)
       .select("owner_id")
       .eq("id", resourceId)
       .eq("is_deleted", false)
       .single();
 
-    if (resourceError || !resource) {
-      return res.status(404).json({ message: "Resource not found" });
+    if (!resource) return res.status(404).json({ message: "Resource not found" });
+    if (resource.owner_id !== userId) return res.status(403).json({ message: "Only the owner can share" });
+
+    // Resolve grantee by email if not provided by ID
+    let granteeId = granteeUserId;
+    if (!granteeId && userEmail) {
+      const { data: grantee } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", userEmail.toLowerCase())
+        .single();
+
+      if (!grantee) return res.status(404).json({ message: "No user found with that email" });
+      granteeId = grantee.id;
     }
 
-    if (resource.owner_id !== userId) {
-      return res.status(403).json({ message: "Only the owner can share this resource" });
-    }
+    if (granteeId === userId) return res.status(400).json({ message: "Cannot share with yourself" });
 
-    // Check if user is trying to share with themselves
-    if (granteeUserId === userId) {
-      return res.status(400).json({ message: "Cannot share with yourself" });
-    }
-
-    // Verify grantee user exists
-    const { data: granteeUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", granteeUserId)
-      .single();
-
-    if (!granteeUser) {
-      return res.status(404).json({ message: "User to share with not found" });
-    }
-
-    // Create or update the share
+    // Upsert share
     const { data, error } = await supabase
       .from("shares")
       .upsert([{
-        resource_type: resourceType,
-        resource_id: resourceId,
-        grantee_user_id: granteeUserId,
+        resource_type:   resourceType,
+        resource_id:     resourceId,
+        grantee_user_id: granteeId,
         role,
-        created_by: userId
-      }], {
-        onConflict: 'resource_type,resource_id,grantee_user_id'
-      })
+        created_by:      userId,
+      }], { onConflict: "resource_type,resource_id,grantee_user_id" })
       .select()
       .single();
 
-    if (error) return res.status(400).json(error);
+    if (error) return res.status(400).json({ message: error.message });
     res.status(201).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+/* ── CREATE PUBLIC LINK ──────────────────────────────────────────────────────*/
 exports.createPublicLink = async (req, res) => {
   try {
-    const { resourceType, resourceId, expiresAt, password } = req.body;
-    const userId = req.user.id;
+    const userId        = req.user.id;
+    const resourceType  = req.body.resource_type || req.body.resourceType;
+    const resourceId    = req.body.resource_id   || req.body.resourceId;
+    const expiresAt     = req.body.expires_at    || req.body.expiresAt    || null;
+    const password      = req.body.password      || null;
 
-    // ADDED: Verify ownership before creating public link
-    const table = resourceType === 'file' ? 'files' : 'folders';
-    const { data: resource, error: resourceError } = await supabase
+    // Verify ownership
+    const table = resourceType === "file" ? "files" : "folders";
+    const { data: resource } = await supabase
       .from(table)
       .select("owner_id")
       .eq("id", resourceId)
       .eq("is_deleted", false)
       .single();
 
-    if (resourceError || !resource) {
-      return res.status(404).json({ message: "Resource not found" });
-    }
+    if (!resource) return res.status(404).json({ message: "Resource not found" });
+    if (resource.owner_id !== userId) return res.status(403).json({ message: "Only the owner can create links" });
 
-    if (resource.owner_id !== userId) {
-      return res.status(403).json({ message: "Only the owner can create public links" });
-    }
-
-    const token = uuidv4();
-
-    // Hash password if provided
-    let passwordHash = null;
-    if (password) {
-      const bcrypt = require('bcrypt');
-      passwordHash = await bcrypt.hash(password, 10);
-    }
+    const token        = uuidv4();
+    const passwordHash = password ? await bcrypt.hash(password, 10) : null;
 
     const { data, error } = await supabase
       .from("link_shares")
-      .insert([{ 
-        resource_type: resourceType, 
-        resource_id: resourceId, 
+      .insert([{
+        resource_type: resourceType,
+        resource_id:   resourceId,
         token,
         password_hash: passwordHash,
-        expires_at: expiresAt || null,
-        created_by: userId
+        expires_at:    expiresAt,
+        created_by:    userId,
       }])
       .select()
       .single();
 
-    if (error) return res.status(400).json(error);
-    res.json({ link: `${process.env.FRONTEND_URL}/share/${token}`, token, expiresAt });
+    if (error) return res.status(400).json({ message: error.message });
+    res.json({ ...data, link: `${process.env.FRONTEND_URL || "http://localhost:5173"}/share/${token}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get all shares for a resource
+/* ── GET SHARES FOR RESOURCE ─────────────────────────────────────────────────*/
 exports.getShares = async (req, res) => {
   try {
     const { type, id } = req.params;
     const userId = req.user.id;
 
     // Verify ownership
-    const table = type === 'file' ? 'files' : 'folders';
+    const table = type === "file" ? "files" : "folders";
     const { data: resource } = await supabase
       .from(table)
       .select("owner_id")
@@ -131,152 +130,144 @@ exports.getShares = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // Get user shares
-    const { data: userShares } = await supabase
-      .from("shares")
-      .select(`
-        *,
-        users:grantee_user_id (id, email, name)
-      `)
-      .eq("resource_type", type)
-      .eq("resource_id", id);
+    const [sharesRes, linksRes] = await Promise.all([
+      supabase
+        .from("shares")
+        .select("id, role, created_at, grantee_user_id, users:grantee_user_id(id, email, name)")
+        .eq("resource_type", type)
+        .eq("resource_id", id),
+      supabase
+        .from("link_shares")
+        .select("id, token, role, expires_at, created_at, password_hash")
+        .eq("resource_type", type)
+        .eq("resource_id", id),
+    ]);
 
-    // Get link shares
-    const { data: linkShares } = await supabase
-      .from("link_shares")
-      .select("*")
-      .eq("resource_type", type)
-      .eq("resource_id", id);
+    // Flatten user shares for frontend
+    const userShares = (sharesRes.data || []).map((s) => ({
+      id:         s.id,
+      role:       s.role,
+      created_at: s.created_at,
+      user_id:    s.grantee_user_id,
+      user_name:  s.users?.name,
+      user_email: s.users?.email,
+    }));
 
-    res.json({ userShares: userShares || [], linkShares: linkShares || [] });
+    // Mark whether link has password (don't expose the hash)
+    const linkShares = (linksRes.data || []).map(({ password_hash, ...link }) => ({
+      ...link,
+      has_password: !!password_hash,
+    }));
+
+    res.json({ userShares, linkShares });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Revoke user share
+/* ── REVOKE USER SHARE ───────────────────────────────────────────────────────*/
 exports.revokeShare = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Get share info to verify ownership
     const { data: share } = await supabase
       .from("shares")
-      .select("*, files!inner(owner_id), folders!inner(owner_id)")
+      .select("created_by")
       .eq("id", id)
       .single();
 
-    if (!share) {
-      return res.status(404).json({ message: "Share not found" });
-    }
+    if (!share) return res.status(404).json({ message: "Share not found" });
+    if (share.created_by !== userId) return res.status(403).json({ message: "Access denied" });
 
-    // Check if user is the creator or resource owner
-    const isOwner = share.created_by === userId;
-    if (!isOwner) {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    const { error } = await supabase
-      .from("shares")
-      .delete()
-      .eq("id", id);
-
-    if (error) return res.status(400).json(error);
-    res.json({ message: "Share revoked successfully" });
+    const { error } = await supabase.from("shares").delete().eq("id", id);
+    if (error) return res.status(400).json({ message: error.message });
+    res.json({ message: "Share revoked" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Delete public link
+/* ── DELETE PUBLIC LINK ──────────────────────────────────────────────────────*/
 exports.deletePublicLink = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const { data: linkShare } = await supabase
+    const { data: link } = await supabase
       .from("link_shares")
       .select("created_by")
       .eq("id", id)
       .single();
 
-    if (!linkShare || linkShare.created_by !== userId) {
-      return res.status(403).json({ message: "Access denied" });
-    }
+    if (!link || link.created_by !== userId) return res.status(403).json({ message: "Access denied" });
 
-    const { error } = await supabase
-      .from("link_shares")
-      .delete()
-      .eq("id", id);
-
-    if (error) return res.status(400).json(error);
-    res.json({ message: "Public link deleted successfully" });
+    const { error } = await supabase.from("link_shares").delete().eq("id", id);
+    if (error) return res.status(400).json({ message: error.message });
+    res.json({ message: "Link deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Access resource via public link
+/* ── ACCESS VIA PUBLIC LINK ──────────────────────────────────────────────────*/
 exports.accessPublicLink = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { token }  = req.params;
+    const { password } = req.query; // frontend sends as query param
 
-    const { data: linkShare, error } = await supabase
+    const { data: link, error } = await supabase
       .from("link_shares")
       .select("*")
       .eq("token", token)
       .single();
 
-    if (error || !linkShare) {
-      return res.status(404).json({ message: "Invalid or expired link" });
-    }
+    if (error || !link) return res.status(404).json({ message: "Invalid or expired link" });
 
-    // Check expiration
-    if (linkShare.expires_at && new Date(linkShare.expires_at) < new Date()) {
+    // Check expiry
+    if (link.expires_at && new Date(link.expires_at) < new Date()) {
       return res.status(410).json({ message: "Link has expired" });
     }
 
-    // Check password if required
-    if (linkShare.password_hash) {
-      if (!password) {
-        return res.status(401).json({ message: "Password required", requiresPassword: true });
-      }
-      const bcrypt = require('bcrypt');
-      const valid = await bcrypt.compare(password, linkShare.password_hash);
-      if (!valid) {
-        return res.status(401).json({ message: "Incorrect password" });
-      }
+    // Check password
+    if (link.password_hash) {
+      if (!password) return res.status(401).json({ requiresPassword: true, message: "Password required" });
+      const valid = await bcrypt.compare(password, link.password_hash);
+      if (!valid) return res.status(401).json({ message: "Incorrect password" });
     }
 
-    // Get the resource
-    const table = linkShare.resource_type === 'file' ? 'files' : 'folders';
+    const table = link.resource_type === "file" ? "files" : "folders";
     const { data: resource } = await supabase
       .from(table)
       .select("*")
-      .eq("id", linkShare.resource_id)
+      .eq("id", link.resource_id)
       .eq("is_deleted", false)
       .single();
 
-    if (!resource) {
-      return res.status(404).json({ message: "Resource not found or deleted" });
+    if (!resource) return res.status(404).json({ message: "Resource not found or deleted" });
+
+    // Fetch owner info
+    const { data: owner } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", resource.owner_id)
+      .single();
+
+    let downloadUrl = null;
+    if (link.resource_type === "file") {
+      const storageKey = resource.storage_key || resource.storage_path;
+      const { data: signed } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(storageKey, 3600);
+      downloadUrl = signed?.signedUrl;
     }
 
-    // For files, generate download URL
-    if (linkShare.resource_type === 'file') {
-      const { data: signedUrl } = await supabase.storage
-        .from(process.env.SUPABASE_STORAGE_BUCKET)
-        .createSignedUrl(resource.storage_path, 3600); // 1 hour
-
-      res.json({ 
-        resource, 
-        downloadUrl: signedUrl?.signedUrl,
-        resourceType: linkShare.resource_type 
-      });
-    } else {
-      res.json({ resource, resourceType: linkShare.resource_type });
-    }
+    res.json({
+      type:        link.resource_type,
+      resource,
+      owner:       owner || { name: "Unknown" },
+      downloadUrl,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
