@@ -2,7 +2,7 @@ const supabase = require("../config/supabaseClient");
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "drive";
 
-/* ── GET TRASH ───────────────────────────────────────────────────────────────*/
+/*  GET TRASH */
 // Returns a flat array: [...files, ...folders] each with a `type` field
 // so the frontend can render them uniformly
 exports.getTrash = async (req, res) => {
@@ -28,7 +28,7 @@ exports.getTrash = async (req, res) => {
   }
 };
 
-/* ── RESTORE ITEM ────────────────────────────────────────────────────────────*/
+/*  RESTORE ITEM */
 // Frontend sends: { resource_type: 'file'|'folder', resource_id: uuid }
 exports.restoreItem = async (req, res) => {
   try {
@@ -55,7 +55,7 @@ exports.restoreItem = async (req, res) => {
   }
 };
 
-/* ── PERMANENT DELETE ────────────────────────────────────────────────────────*/
+/*  PERMANENT DELETE */
 exports.permanentDelete = async (req, res) => {
   try {
     const { type, id } = req.params;
@@ -93,7 +93,7 @@ exports.permanentDelete = async (req, res) => {
   }
 };
 
-/* ── EMPTY TRASH ─────────────────────────────────────────────────────────────*/
+/*  EMPTY TRASH */
 exports.emptyTrash = async (req, res) => {
   try {
     const userId = req.user.id;

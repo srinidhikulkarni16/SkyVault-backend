@@ -5,7 +5,7 @@ const auth = require("../middleware/authMiddleware");
 const folderController = require("../controllers/folderController");
 const checkPerm = require("../middleware/permissionMiddleware");
 
-// ── CREATE FOLDER ─────────────────────────────────────────────────────────────
+//  CREATE FOLDER 
 router.post("/", auth, async (req, res, next) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Unauthorized: user missing" });
@@ -15,7 +15,7 @@ router.post("/", auth, async (req, res, next) => {
   }
 });
 
-// ── GET FOLDERS ────────────────────────────────────────────────────────────────
+//  GET FOLDERS 
 router.get("/", auth, async (req, res, next) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Unauthorized: user missing" });
@@ -25,7 +25,7 @@ router.get("/", auth, async (req, res, next) => {
   }
 });
 
-// ── RENAME FOLDER ─────────────────────────────────────────────────────────────
+//  RENAME FOLDER 
 router.patch("/:id/rename", auth, checkPerm('folder', 'owner'), async (req, res, next) => {
   try {
     await folderController.renameFolder(req, res);
@@ -34,7 +34,7 @@ router.patch("/:id/rename", auth, checkPerm('folder', 'owner'), async (req, res,
   }
 });
 
-// ── MOVE FOLDER ───────────────────────────────────────────────────────────────
+//  MOVE FOLDER 
 router.patch("/:id/move", auth, checkPerm('folder', 'owner'), async (req, res, next) => {
   try {
     await folderController.moveFolder(req, res);
@@ -43,7 +43,7 @@ router.patch("/:id/move", auth, checkPerm('folder', 'owner'), async (req, res, n
   }
 });
 
-// ── DELETE FOLDER ─────────────────────────────────────────────────────────────
+//  DELETE FOLDER 
 router.delete("/:id", auth, checkPerm('folder', 'owner'), async (req, res, next) => {
   try {
     await folderController.deleteFolder(req, res);

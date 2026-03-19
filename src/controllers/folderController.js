@@ -1,6 +1,6 @@
 const supabase = require("../config/supabaseClient");
 
-/* ── CREATE FOLDER ───────────────────────────────────────────────────────────*/
+/*  CREATE FOLDER */
 const createFolder = async (req, res) => {
   try {
     const { name, parent_id } = req.body;
@@ -28,7 +28,7 @@ const createFolder = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── GET FOLDERS ─────────────────────────────────────────────────────────────*/
+/*  GET FOLDERS */
 const getFolders = async (req, res) => {
   try {
     const { parent_id } = req.query;
@@ -46,7 +46,7 @@ const getFolders = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── RENAME FOLDER  PATCH /folders/:id/rename ────────────────────────────────*/
+/*  RENAME FOLDER  PATCH /folders/:id/rename */
 const renameFolder = async (req, res) => {
   try {
     const { id }   = req.params;
@@ -73,7 +73,7 @@ const renameFolder = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── MOVE FOLDER  PATCH /folders/:id/move ────────────────────────────────────*/
+/*  MOVE FOLDER  PATCH /folders/:id/move */
 const moveFolder = async (req, res) => {
   try {
     const { id }      = req.params;
@@ -105,7 +105,7 @@ const moveFolder = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── DELETE FOLDER (soft) ────────────────────────────────────────────────────*/
+/*  DELETE FOLDER (soft) */
 const deleteFolder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -117,16 +117,14 @@ const deleteFolder = async (req, res) => {
 
     const now = new Date().toISOString();
 
-    // Soft delete folder
     await supabase.from("folders")
       .update({ is_deleted: true, deleted_at: now }).eq("id", id);
 
-    // Soft delete files inside
+  
     await supabase.from("files")
       .update({ is_deleted: true, deleted_at: now })
       .eq("folder_id", id).eq("owner_id", userId);
 
-    // Soft delete child folders (one level — recursive handled by DB cascade or cron)
     await supabase.from("folders")
       .update({ is_deleted: true, deleted_at: now })
       .eq("parent_id", id).eq("owner_id", userId);
@@ -135,7 +133,7 @@ const deleteFolder = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── Helper: cycle detection ─────────────────────────────────────────────────*/
+/*  Helper: cycle detection */
 async function checkIsDescendant(folderId, targetId) {
   let currentId = targetId;
   const visited = new Set();

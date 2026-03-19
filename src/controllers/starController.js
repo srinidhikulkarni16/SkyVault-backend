@@ -1,6 +1,6 @@
 const supabase = require("../config/supabaseClient");
 
-/* ── STAR ITEM ───────────────────────────────────────────────────────────────*/
+/*  STAR ITEM */
 // Frontend sends: { resource_type, resource_id }
 exports.starItem = async (req, res) => {
   try {
@@ -51,7 +51,7 @@ exports.starItem = async (req, res) => {
   }
 };
 
-/* ── UNSTAR ITEM ─────────────────────────────────────────────────────────────*/
+/*  UNSTAR ITEM */
 // Frontend calls DELETE /api/stars/:type/:id  OR  DELETE /api/stars with body
 exports.unstarItem = async (req, res) => {
   try {
@@ -74,9 +74,9 @@ exports.unstarItem = async (req, res) => {
   }
 };
 
-/* ── GET STARRED ITEMS ───────────────────────────────────────────────────────*/
+/*  GET STARRED ITEMS */
 // Returns a flat array with each item having a `type` field
-// e.g. [{ id, name, type: 'file', is_starred: true, ... }, ...]
+
 exports.getStarredItems = async (req, res) => {
   try {
     const userId = req.user.id;

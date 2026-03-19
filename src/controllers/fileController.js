@@ -2,7 +2,7 @@ const supabase = require("../config/supabaseClient");
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "drive";
 
-/* ── UPLOAD FILE ─────────────────────────────────────────────────────────────*/
+/*  UPLOAD FILE */
 const uploadFile = async (req, res) => {
   try {
     const file = req.file;
@@ -65,7 +65,7 @@ const uploadFile = async (req, res) => {
   }
 };
 
-/* ── GET FILES ───────────────────────────────────────────────────────────────*/
+/*  GET FILES */
 const getFiles = async (req, res) => {
   try {
     const { folder_id } = req.query;
@@ -82,7 +82,7 @@ const getFiles = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── GET RECENT FILES ────────────────────────────────────────────────────────*/
+/*  GET RECENT FILES */
 const getRecentFiles = async (req, res) => {
   try {
     const { data, error } = await supabase.from("files").select("*")
@@ -95,7 +95,7 @@ const getRecentFiles = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── RENAME FILE  PATCH /files/:id/rename ────────────────────────────────────*/
+/*  RENAME FILE  PATCH /files/:id/rename */
 const renameFile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -116,7 +116,7 @@ const renameFile = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── MOVE FILE  PATCH /files/:id/move ───────────────────────────────────────*/
+/*  MOVE FILE  PATCH /files/:id/move */
 const moveFile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -146,7 +146,7 @@ const moveFile = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── DELETE FILE (soft) ──────────────────────────────────────────────────────*/
+/*  DELETE FILE (soft) */
 const deleteFile = async (req, res) => {
   try {
     const { error } = await supabase.from("files")
@@ -159,7 +159,7 @@ const deleteFile = async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-/* ── DOWNLOAD FILE ───────────────────────────────────────────────────────────*/
+/*  DOWNLOAD FILE */
 const downloadFile = async (req, res) => {
   try {
     const { data: file, error } = await supabase.from("files")

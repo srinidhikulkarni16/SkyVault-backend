@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "drive";
 
-/* ── SHARE WITH USER ─────────────────────────────────────────────────────────*/
+/*  SHARE WITH USER */
 // Frontend sends: { resource_type, resource_id, user_email, role }
 exports.shareWithUser = async (req, res) => {
   try {
@@ -67,7 +67,7 @@ exports.shareWithUser = async (req, res) => {
   }
 };
 
-/* ── CREATE PUBLIC LINK ──────────────────────────────────────────────────────*/
+/*  CREATE PUBLIC LINK */
 exports.createPublicLink = async (req, res) => {
   try {
     const userId        = req.user.id;
@@ -111,7 +111,7 @@ exports.createPublicLink = async (req, res) => {
   }
 };
 
-/* ── GET SHARES FOR RESOURCE ─────────────────────────────────────────────────*/
+/*  GET SHARES FOR RESOURCE */
 exports.getShares = async (req, res) => {
   try {
     const { type, id } = req.params;
@@ -165,7 +165,7 @@ exports.getShares = async (req, res) => {
   }
 };
 
-/* ── REVOKE USER SHARE ───────────────────────────────────────────────────────*/
+/*  REVOKE USER SHARE */
 exports.revokeShare = async (req, res) => {
   try {
     const { id } = req.params;
@@ -188,7 +188,7 @@ exports.revokeShare = async (req, res) => {
   }
 };
 
-/* ── DELETE PUBLIC LINK ──────────────────────────────────────────────────────*/
+/*  DELETE PUBLIC LINK */
 exports.deletePublicLink = async (req, res) => {
   try {
     const { id } = req.params;
@@ -210,7 +210,7 @@ exports.deletePublicLink = async (req, res) => {
   }
 };
 
-/* ── ACCESS VIA PUBLIC LINK ──────────────────────────────────────────────────*/
+/*  ACCESS VIA PUBLIC LINK */
 exports.accessPublicLink = async (req, res) => {
   try {
     const { token }  = req.params;

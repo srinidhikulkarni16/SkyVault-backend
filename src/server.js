@@ -7,7 +7,7 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
-// ── CORS ────────────────────────────────────────────────────────────────
+//  CORS 
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -25,11 +25,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type','Authorization'],
 }));
 
-// ── Body parsing ─────────────────────────────────────────────────────────
+//  Body parsing 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Rate limiting ───────────────────────────────────────────────────────
+//  Rate limiting 
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -37,10 +37,10 @@ app.use(rateLimit({
   legacyHeaders: false,
 }));
 
-// ── Health check ────────────────────────────────────────────────────────
+//  Health check 
 app.get("/api/health", (req, res) => res.json({ status: "ok", message: "SkyVault API 🚀" }));
 
-// ── API Routes ─────────────────────────────────────────────────────────
+//  API Routes 
 app.use("/api/auth",    require("./routes/authRoutes"));
 app.use("/api/files",   require("./routes/fileRoutes"));
 app.use("/api/folders", require("./routes/folderRoutes"));
@@ -50,7 +50,7 @@ app.use("/api/trash",   require("./routes/trashRoutes"));
 app.use("/api/search",  require("./routes/searchRoutes"));
 app.use("/api/utility", require("./routes/utilityRoutes"));
 
-// ── Serve frontend ─────────────────────────────────────────────────────
+//  Serve frontend 
 app.use(express.static(path.join(__dirname, "../frontend/build")));
 
 // SPA fallback: send index.html for any GET request that doesn't start with /api
@@ -58,9 +58,9 @@ app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
 });
 
-// ── Error handler ───────────────────────────────────────────────────────
+//  Error handler 
 app.use(errorHandler);
 
-// ── Start server ───────────────────────────────────────────────────────
+//  Start server 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ SkyVault running on http://localhost:${PORT}`));
