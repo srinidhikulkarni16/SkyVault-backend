@@ -31,14 +31,14 @@ const moveValidation = [
   body('folder_id').optional({ nullable: true }).isUUID(),
 ];
 
-// ✅ Fixed: use snake_case to match what controllers read
+// use snake_case to match what controllers read
 const shareValidation = [
   body('resource_type').isIn(['file', 'folder']),
   body('resource_id').isUUID(),
   body('role').optional({ nullable: true }).isIn(['viewer', 'editor']),
 ];
 
-// ✅ Fixed: use snake_case to match what starController reads
+// use snake_case to match what starController reads
 const starValidation = [
   body('resource_type').isIn(['file', 'folder']),
   body('resource_id').isUUID(),

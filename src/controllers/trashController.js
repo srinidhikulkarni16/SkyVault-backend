@@ -4,7 +4,6 @@ const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "drive";
 
 /*  GET TRASH */
 // Returns a flat array: [...files, ...folders] each with a `type` field
-// so the frontend can render them uniformly
 exports.getTrash = async (req, res) => {
   try {
     const userId = req.user.id;

@@ -5,12 +5,12 @@ const createFolder = async (req, res) => {
   try {
     const { name, parent_id } = req.body;
     
-    // 1. Clean parent_id: Convert empty strings to null for UUID compatibility
+    //  Clean parent_id: Convert empty strings to null for UUID compatibility
     const folderParentId = (parent_id && parent_id !== 'root' && parent_id !== '') ? parent_id : null;
 
     if (!name?.trim()) return res.status(400).json({ message: "Folder name is required" });
 
-    // 2. If nesting, verify parent exists and belongs to user
+    //  If nesting, verify parent exists and belongs to user
     if (folderParentId) {
       const { data: parent } = await supabase.from("folders").select("id")
         .eq("id", folderParentId)
@@ -20,7 +20,7 @@ const createFolder = async (req, res) => {
       if (!parent) return res.status(404).json({ message: "Parent folder not found" });
     }
 
-    // 3. Duplicate name check in the same directory
+    //  Duplicate name check in the same directory
     const { data: existing } = await supabase.from("folders").select("id")
       .eq("name", name.trim())
       .eq("owner_id", req.user.id)
@@ -30,7 +30,7 @@ const createFolder = async (req, res) => {
     
     if (existing) return res.status(409).json({ message: "A folder with this name already exists here" });
 
-    // 4. Insert with explicit owner_id
+    //  Insert with explicit owner_id
     const { data, error } = await supabase.from("folders")
       .insert([{ 
         name: name.trim(), 
@@ -143,16 +143,16 @@ const deleteFolder = async (req, res) => {
 
     const now = new Date().toISOString();
 
-    // 1. Mark main folder as deleted
+    //  Mark main folder as deleted
     await supabase.from("folders")
       .update({ is_deleted: true, deleted_at: now }).eq("id", id);
 
-    // 2. Mark files inside as deleted
+    //  Mark files inside as deleted
     await supabase.from("files")
       .update({ is_deleted: true, deleted_at: now })
       .eq("folder_id", id).eq("owner_id", userId);
 
-    // 3. Mark immediate subfolders as deleted
+    //  Mark immediate subfolders as deleted
     await supabase.from("folders")
       .update({ is_deleted: true, deleted_at: now })
       .eq("parent_id", id).eq("owner_id", userId);

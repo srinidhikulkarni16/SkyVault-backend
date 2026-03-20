@@ -3,7 +3,7 @@ const shareController = require("../controllers/shareController");
 const auth = require("../middleware/authMiddleware");
 const { shareValidation, validate } = require("../middleware/validation");
 
-// ✅ Static routes MUST come before wildcard /:type/:id
+// Static routes MUST come before wildcard /:type/:id
 router.post("/",           auth, shareValidation, validate, shareController.shareWithUser);
 router.post("/link",       auth, shareController.createPublicLink);
 router.get("/public/:token",  shareController.accessPublicLink);

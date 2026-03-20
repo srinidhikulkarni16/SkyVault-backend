@@ -1,6 +1,3 @@
-//It's redundant - fileController already has searchFiles.
-//Fixed it to be secure.
-
 const supabase = require("../config/supabaseClient")
 
 exports.search = async(req, res) => {
@@ -18,8 +15,8 @@ exports.search = async(req, res) => {
       .from("files")
       .select("*")
       .ilike("name", `%${q}%`)
-      .eq("owner_id", req.user.id) //ADDED
-      .eq("is_deleted", false) //ADDED
+      .eq("owner_id", req.user.id) 
+      .eq("is_deleted", false) 
 
     if (error) {
       return res.status(400).json(error)

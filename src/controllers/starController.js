@@ -83,7 +83,7 @@ exports.getStarredItems = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // 1. Get all star rows for this user
+    //  Get all star rows for this user
     const { data: stars, error: starsErr } = await supabase
       .from("stars")
       .select("resource_id, resource_type")
@@ -94,11 +94,11 @@ exports.getStarredItems = async (req, res) => {
     if (starsErr) return res.status(400).json({ message: starsErr.message });
     if (!stars || stars.length === 0) return res.json([]);
 
-    // 2. Split into file IDs and folder IDs
+    //  Split into file IDs and folder IDs
     const fileIds   = stars.filter(s => s.resource_type === "file").map(s => s.resource_id);
     const folderIds = stars.filter(s => s.resource_type === "folder").map(s => s.resource_id);
 
-    // 3. Fetch the actual records using .in()
+    //  Fetch the actual records using .in()
     const [filesRes, foldersRes] = await Promise.all([
       fileIds.length > 0
         ? supabase.from("files").select("*").in("id", fileIds).eq("is_deleted", false)

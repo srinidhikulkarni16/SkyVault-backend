@@ -18,7 +18,7 @@ module.exports = (resourceType, requiredRole = 'owner') => {
         .from(table)
         .select("owner_id")
         .eq("id", resourceId)
-        .eq("is_deleted", false) // ADDED: Don't allow access to deleted items
+        .eq("is_deleted", false) 
         .single();
 
       if (!resource) return res.status(404).json({ message: "Resource not found" });
