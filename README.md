@@ -1,4 +1,4 @@
-** SkyVault – Backend **
+**SkyVault – Backend**
 
  📌 Description
 
