@@ -4,10 +4,7 @@ const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
-      error: {
-        code: 'VALIDATION_ERROR',
-        details: errors.array()
-      }
+      error: { code: 'VALIDATION_ERROR', details: errors.array() }
     });
   }
   next();
@@ -16,42 +13,42 @@ const validate = (req, res, next) => {
 const registerValidation = [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('name').trim().notEmpty().withMessage('Name is required')
+  body('name').trim().notEmpty().withMessage('Name is required'),
 ];
 
 const loginValidation = [
   body('email').isEmail().normalizeEmail(),
-  body('password').notEmpty()
+  body('password').notEmpty(),
 ];
 
 const createFolderValidation = [
   body('name').trim().notEmpty(),
-  body('parent_id').optional({ nullable: true }).isUUID()
+  body('parent_id').optional({ nullable: true }).isUUID(),
 ];
 
 const moveValidation = [
   param('id').isUUID(),
-  body('folder_id').optional({ nullable: true }).isUUID() // Changed from destinationId to folder_id
+  body('folder_id').optional({ nullable: true }).isUUID(),
 ];
 
+// ✅ Fixed: use snake_case to match what controllers read
 const shareValidation = [
-  body('resourceType').isIn(['file', 'folder']),
-  body('resourceId').isUUID(),
-  body('granteeUserId').isUUID(),
-  body('role').isIn(['viewer', 'editor'])
+  body('resource_type').isIn(['file', 'folder']),
+  body('resource_id').isUUID(),
+  body('role').optional({ nullable: true }).isIn(['viewer', 'editor']),
 ];
 
+// ✅ Fixed: use snake_case to match what starController reads
 const starValidation = [
-  body('resourceType').isIn(['file', 'folder']),
-  body('resourceId').isUUID()
+  body('resource_type').isIn(['file', 'folder']),
+  body('resource_id').isUUID(),
 ];
 
-// Public link validation
 const publicLinkValidation = [
-  body('resourceType').isIn(['file', 'folder']),
-  body('resourceId').isUUID(),
-  body('expiresAt').optional({ nullable: true }).isISO8601(),
-  body('password').optional({ nullable: true }).isString()
+  body('resource_type').isIn(['file', 'folder']),
+  body('resource_id').isUUID(),
+  body('expires_at').optional({ nullable: true }).isISO8601(),
+  body('password').optional({ nullable: true }).isString(),
 ];
 
 module.exports = {
@@ -62,5 +59,5 @@ module.exports = {
   moveValidation,
   shareValidation,
   starValidation,
-  publicLinkValidation
+  publicLinkValidation,
 };
