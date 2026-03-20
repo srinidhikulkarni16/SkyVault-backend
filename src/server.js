@@ -50,7 +50,10 @@ app.use("/api/search",  require("./routes/searchRoutes"));
 app.use("/api/utility", require("./routes/utilityRoutes"));
 
 //  Serve frontend 
-app.use(express.static(path.join(__dirname, "../frontend/build")));
+// app.use(express.static(path.join(__dirname, "../frontend/build")));
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
 
 // SPA fallback: send index.html for any GET request that doesn't start with /api
 app.get(/^\/(?!api).*/, (req, res) => {
