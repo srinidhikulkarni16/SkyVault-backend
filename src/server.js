@@ -50,7 +50,6 @@ app.use("/api/search",  require("./routes/searchRoutes"));
 app.use("/api/utility", require("./routes/utilityRoutes"));
 
 //  Serve frontend 
-// app.use(express.static(path.join(__dirname, "../frontend/build")));
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
